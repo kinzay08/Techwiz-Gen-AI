@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity History - AI Meeting Notes Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 20%, #2d1b4e 40%, #1a0f2e 60%, #0f1a2e 80%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            color: #e4e4e7;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0, 185, 174, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 40%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 90% 70% at 10% 80%, rgba(0, 212, 199, 0.02) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(75, 0, 130, 0.02) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: backgroundShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.95), rgba(45, 27, 78, 0.3), rgba(26, 15, 46, 0.7));
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 185, 174, 0.15);
+            padding: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.01), rgba(138, 43, 226, 0.005), transparent);
+            animation: sidebarRotate 25s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes sidebarRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0 1rem;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #379b94 0%, #2a7a75 50%, #35918a 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 185, 174, 0.3);
+        }
+
+        .logo-icon::after {
+            content: "🎙️";
+            font-size: 16px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 25%, #00f0dd 50%, #00d4c7 75%, #00b9ae 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+        }
+
+        @keyframes logoGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0 0.8rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.3rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            color: #a1a1aa;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(0, 185, 174, 0.1);
+            color: #00b9ae;
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .logout-btn {
+            color: #ef4444;
+        }
+
+        .logout-btn:hover,
+        .logout-btn.active {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .logout-btn:hover::before,
+        .logout-btn.active::before {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+
+        .nav-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 0.5rem;
+            overflow-y: auto;
+            max-height: 95vh;
+        }
+
+        /* Activity Section */
+        .activity-container {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2), rgba(26, 15, 46, 0.4));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 12px;
+            padding: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .activity-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.02), transparent);
+            animation: cardRotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes cardRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .activity-header {
+            margin-bottom: 1.2rem;
+        }
+
+        .activity-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .activity-subtitle {
+            color: #a1a1aa;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .activity-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(0, 185, 174, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 185, 174, 0.2);
+            border-color: rgba(0, 185, 174, 0.4);
+        }
+
+        .activity-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .activity-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        .activity-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .activity-details {
+            color: #a1a1aa;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+
+        .activity-timestamp {
+            color: #a1a1aa;
+            font-size: 0.8rem;
+            background: rgba(0, 185, 174, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .provider-badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            margin-top: 0.3rem;
+            display: inline-block;
+        }
+
+        .no-activities {
+            color: #a1a1aa;
+            text-align: center;
+            font-size: 1rem;
+            padding: 1.2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+            gap: 0.4rem;
+        }
+
+        .page-item {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .page-link {
+            padding: 0.4rem 0.8rem;
+            background: rgba(0, 185, 174, 0.1);
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 6px;
+            color: #00b9ae;
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .page-link:hover {
+            background: rgba(0, 185, 174, 0.2);
+            border-color: rgba(0, 185, 174, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .page-item.disabled .page-link {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #a1a1aa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* User Profile */
+        .user-profile {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 8px;
+            padding: 0.5rem;
+            z-index: 10;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00f0dd 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .user-info h3 {
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .user-info p {
+            color: #71717a;
+            font-size: 0.7rem;
+        }
+
+        .logout-link {
+            color: #ef4444;
+            text-decoration: none;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-link:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: auto;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .flash-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .flash-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+
+        .flash-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                position: fixed;
+                left: -200px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .activity-container {
+                padding: 1rem;
+            }
+
+            .activity-title {
+                font-size: 1.4rem;
+            }
+
+            .activity-subtitle {
+                font-size: 0.75rem;
+            }
+
+            .activity-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .activity-timestamp {
+                margin-top: 0.3rem;
+            }
+
+            .user-profile {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(39, 39, 42, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 185, 174, 0.3);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 185, 174, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <a href="#" class="logo">
+                <div class="logo-icon"></div>
+                <div class="logo-text">TalkToText Pro</div>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/overview" class="nav-link{% if request.path == '/overview' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link{% if request.endpoint == 'dashboard' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9,22 9,12 15,12 15,22"/>
+                        </svg>
+                        AI Assistant
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('saved_notes') }}" class="nav-link{% if request.endpoint == 'saved_notes' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Saved Notes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('activity_history') }}" class="nav-link active">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="m12 1 1.09 3.26L16 5l-1.91 3.26L16 10.74 12 9 8 10.74l1.91-2.48L8 5l2.91-.74L12 1z"/>
+                        </svg>
+                        Recent Activity
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- User Profile -->
+            <div class="user-profile">
+                <div class="user-avatar">{{ name[0] if name else 'U' }}</div>
+                <div class="user-info">
+                    <h3>{{ name if name else 'User' }}</h3>
+                    <p>{{ current_user.email if current_user and current_user.email else 'user@example.com' }}</p>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+            </div>
+
+            <!-- Activity Container -->
+            <div class="activity-container">
+                <div class="activity-header">
+                    <h1 class="activity-title">Recent Activity</h1>
+                    <p class="activity-subtitle">View your recent interactions and activities within the application.</p>
+                </div>
+
+                {% if activities %}
+                <div class="activity-list">
+                    {% for act in activities %}
+                    <div class="activity-card">
+                        <div>
+                            <div class="activity-label">{{ act.label }}</div>
+                            <div class="activity-details">{{ act.details or 'No details' }}</div>
+                            {% if act.provider %}
+                            <div class="provider-badge">{{ act.provider|title }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="activity-timestamp">{{ act.timestamp }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                <nav aria-label="Page navigation" class="pagination">
+                    <ul class="pagination">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('activity_history', page=pagination.prev_page) }}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                        {% endif %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link">Page {{ pagination.page }} of {{ (pagination.total // pagination.per_page) + (1 if pagination.total % pagination.per_page else 0) }}</span>
+                        </li>
+
+                        {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('activity_history', page=pagination.next_page) }}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% else %}
+                <p class="no-activities">No activities found.</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                msg.style.animation = 'slideUp 0.3s ease-out forwards';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

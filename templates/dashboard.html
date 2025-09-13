@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AI Meeting Notes Maker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 20%, #2d1b4e 40%, #1a0f2e 60%, #0f1a2e 80%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            color: #e4e4e7;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0, 185, 174, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 40%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 90% 70% at 10% 80%, rgba(0, 212, 199, 0.02) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(75, 0, 130, 0.02) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: backgroundShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.95), rgba(45, 27, 78, 0.3), rgba(26, 15, 46, 0.7));
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 185, 174, 0.15);
+            padding: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.01), rgba(138, 43, 226, 0.005), transparent);
+            animation: sidebarRotate 25s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes sidebarRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0 1rem;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+        }
+
+        .sidebar-logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 185, 174, 0.3);
+        }
+
+        .sidebar-logo-icon svg {
+            width: 16px;
+            height: 16px;
+            fill: #ffffff;
+        }
+
+        .sidebar-logo-text {
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 25%, #00f0dd 50%, #00d4c7 75%, #00b9ae 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            line-height: 1.2;
+        }
+
+        @keyframes logoGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Navigation */
+        .nav-menu {
+            list-style: none;
+            padding: 0 0.8rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.3rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            color: #a1a1aa;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(0, 185, 174, 0.1);
+            color: #00b9ae;
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .logout-btn {
+            color: #ef4444;
+        }
+
+        .logout-btn:hover,
+        .logout-btn.active {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .logout-btn:hover::before,
+        .logout-btn.active::before {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+
+        .nav-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            overflow-y: auto;
+            max-height: 95vh;
+        }
+
+        /* Upload Form */
+        .upload-container {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2), rgba(26, 15, 46, 0.4));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .upload-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.02), transparent);
+            animation: cardRotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes cardRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .upload-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .upload-subtitle {
+            color: #a1a1aa;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .upload-form {
+            margin-bottom: 1rem;
+        }
+
+        .file-input-wrapper {
+            margin-bottom: 1rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: block;
+            padding: 1rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(45, 27, 78, 0.3));
+            border: 2px dashed rgba(0, 185, 174, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #a1a1aa;
+            font-size: 0.8rem;
+        }
+
+        .file-label:hover {
+            border-color: rgba(0, 185, 174, 0.5);
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.4));
+        }
+
+        .file-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .upload-btn {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: buttonGradient 3s ease-in-out infinite;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 185, 174, 0.3);
+            animation-play-state: paused;
+        }
+
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        @keyframes buttonGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2), rgba(26, 15, 46, 0.4));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 95vh;
+            overflow-y: auto;
+            padding: 1.2rem;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 0.8rem;
+            right: 0.8rem;
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #00b9ae;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid rgba(0, 185, 174, 0.3);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .save-btn {
+            padding: 0.4rem 0.8rem;
+            background: rgba(0, 185, 174, 0.2);
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 6px;
+            color: #00b9ae;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .save-btn:hover {
+            background: rgba(0, 185, 174, 0.3);
+            border-color: rgba(0, 185, 174, 0.5);
+        }
+
+        .result-content {
+            color: #a1a1aa;
+            line-height: 1.4;
+        }
+
+        .transcript-text {
+            white-space: pre-wrap;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* User Profile */
+        .user-profile {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 8px;
+            padding: 0.6rem;
+            z-index: 10;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00f0dd 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .user-info h3 {
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .user-info p {
+            color: #71717a;
+            font-size: 0.65rem;
+        }
+
+        .logout-link {
+            color: #ef4444;
+            text-decoration: none;
+            font-size: 0.7rem;
+            margin-left: 0.4rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-link:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 0.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: auto;
+            max-width: 400px;
+        }
+
+        .flash-message {
+            padding: 0.6rem 1rem;
+            margin-bottom: 0.4rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.8rem;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .flash-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .flash-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #3b82f6;
+        }
+
+        .flash-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* AI Status Bar Styles */
+        .ai-status-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .ai-status-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .ai-badge {
+            padding: 3px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .ai-badge-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .ai-badge-inactive {
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
+            border: 1px solid rgba(156, 163, 175, 0.3);
+        }
+
+        /* AI Selection Styles */
+        .ai-selection-wrapper {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ai-selection-row {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .ai-provider-group,
+        .ai-model-group {
+            flex: 1;
+        }
+
+        .ai-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .ai-select {
+            width: 100%;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 0.8rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .ai-select:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+
+        .ai-select option {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        /* Provider Badge */
+        .provider-badge {
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-radius: 5px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        /* Result Actions */
+        .result-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .regenerate-btn {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.2s;
+        }
+
+        .regenerate-btn:hover {
+            background: rgba(251, 191, 36, 0.2);
+            border-color: rgba(251, 191, 36, 0.5);
+        }
+
+        /* Regenerate Form */
+        .regenerate-form {
+            padding: 10px;
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .regenerate-options {
+            display: flex;
+            gap: 8px;
+            align-items: end;
+        }
+
+        .regenerate-group {
+            flex: 1;
+        }
+
+        .regenerate-label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.7rem;
+            margin-bottom: 3px;
+        }
+
+        .regenerate-select {
+            width: 100%;
+            padding: 4px 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+            font-size: 0.7rem;
+            outline: none;
+        }
+
+        .regenerate-select option {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .regenerate-submit-btn {
+            background: #fbbf24;
+            color: #1a1a1a;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.2s;
+        }
+
+        .regenerate-submit-btn:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                position: fixed;
+                left: -200px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .user-profile {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 1rem;
+            }
+
+            .upload-container {
+                padding: 1rem;
+                max-width: 95%;
+            }
+
+            .upload-title {
+                font-size: 1.4rem;
+            }
+
+            .upload-subtitle {
+                font-size: 0.75rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 0.8rem;
+            }
+
+            .ai-selection-row,
+            .regenerate-options {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .result-actions {
+                flex-direction: column;
+                gap: 6px;
+                align-items: stretch;
+            }
+
+            .regenerate-btn {
+                justify-content: center;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(39, 39, 42, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 185, 174, 0.3);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 185, 174, 0.5);
+        }
+
+        /* Logo Overrides */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            margin-left: 15px;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #379b94 0%, #2a7a75 50%, #35918a 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 185, 174, 0.3);
+        }
+
+        .logo-icon::after {
+            content: "🎙️";
+            font-size: 16px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 25%, #00f0dd 50%, #00d4c7 75%, #00b9ae 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <a href="#" class="logo">
+                <div class="logo-icon"></div>
+                <div class="logo-text">TalkToText Pro</div>
+            </a><br>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/overview" class="nav-link{% if request.path == '/overview' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link{% if request.endpoint == 'dashboard' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9,22 9,12 15,12 15,22"/>
+                        </svg>
+                        AI Assistant
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('saved_notes') }}" class="nav-link{% if request.endpoint == 'saved_notes' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Saved Notes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('activity_history') }}" class="nav-link{% if request.endpoint == 'activity_history' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="m12 1 1.09 3.26L16 5l-1.91 3.26L16 10.74 12 9 8 10.74l1.91-2.48L8 5l2.91-.74L12 1z"/>
+                        </svg>
+                        Recent Activity
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- User Profile -->
+            <div class="user-profile">
+                <div class="user-avatar">{{ name[0] if name else 'U' }}</div>
+                <div class="user-info">
+                    <h3>{{ name if name else 'User' }}</h3>
+                    <p>{{ current_user.email if current_user and current_user.email else 'user@example.com' }}</p>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+            </div>
+
+            <!-- Upload Container -->
+            <div class="upload-container">
+                <div class="upload-header">
+                    <h1 class="upload-title">Transform Audio to Smart Notes</h1>
+                    <p class="upload-subtitle">Upload your meeting recordings and let AI create intelligent summaries and actionable notes for you.</p>
+                    
+                    <!-- AI Provider Status -->
+                    {% if ai_providers %}
+                    <div class="ai-status-bar">
+                        <span class="ai-status-label">Available AI:</span>
+                        {% if ai_providers.openai.available %}
+                            <span class="ai-badge ai-badge-active">{{ ai_providers.openai.name }}</span>
+                        {% else %}
+                            <span class="ai-badge ai-badge-inactive">{{ ai_providers.openai.name }}</span>
+                        {% endif %}
+                        {% if ai_providers.groq.available %}
+                            <span class="ai-badge ai-badge-active">{{ ai_providers.groq.name }}</span>
+                        {% else %}
+                            <span class="ai-badge ai-badge-inactive">{{ ai_providers.groq.name }}</span>
+                        {% endif %}
+                        {% if ai_providers.gemini.available %}
+                            <span class="ai-badge ai-badge-active">{{ ai_providers.gemini.name }}</span>
+                        {% else %}
+                            <span class="ai-badge ai-badge-inactive">{{ ai_providers.gemini.name }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <form class="upload-form" method="POST" enctype="multipart/form-data">
+                    <!-- File Input -->
+                    <div class="file-input-wrapper">
+                        <input type="file" name="audio_file" id="audio_file" class="file-input" accept=".wav,.mp3,.m4a,.mp4" required>
+                        <label for="audio_file" class="file-label">
+                            <span class="file-icon">🎙️</span>
+                            <strong>Choose your audio file</strong><br>
+                            <span>Supports WAV, MP3, M4A, MP4 formats</span>
+                        </label>
+                    </div>
+
+                    <!-- AI Provider Selection -->
+                    <div class="ai-selection-wrapper">
+                        <div class="ai-selection-row">
+                            <div class="ai-provider-group">
+                                <label for="ai_provider" class="ai-label">AI Provider:</label>
+                                <select name="ai_provider" id="ai_provider" class="ai-select">
+                                    <option value="auto">Auto (Best Available)</option>
+                                    {% if ai_providers and ai_providers.openai.available %}
+                                    <option value="openai">{{ ai_providers.openai.name }}</option>
+                                    {% endif %}
+                                    {% if ai_providers and ai_providers.groq.available %}
+                                    <option value="groq">{{ ai_providers.groq.name }}</option>
+                                    {% endif %}
+                                    {% if ai_providers and ai_providers.gemini.available %}
+                                    <option value="gemini">{{ ai_providers.gemini.name }}</option>
+                                    {% endif %}
+                                </select>
+                            </div>
+
+                            <!-- Groq Model Selection -->
+                            {% if ai_providers and ai_providers.groq.available %}
+                            <div class="ai-model-group" id="groq_model_section" style="display: none;">
+                                <label for="groq_model" class="ai-label">Groq Model:</label>
+                                <select name="groq_model" id="groq_model" class="ai-select">
+                                    {% for model in ai_providers.groq.models %}
+                                    <option value="{{ model }}" {% if model == 'llama-3.3-70b-versatile' %}selected{% endif %}>
+                                        {{ model.replace('-', ' ').title() }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <button type="submit" class="upload-btn" id="process-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Process & Generate Notes
+                    </button>
+                </form>
+            </div>
+
+            <!-- Results Modal -->
+            {% if transcript or notes %}
+            <div class="modal-overlay show">
+                <div class="modal-content">
+                    <button class="modal-close" onclick="closeModal()">✕</button>
+                    {% if transcript %}
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3 class="result-title">
+                                Transcript
+                            </h3>
+                            {% if provider_used %}
+                            <div class="provider-badge">
+                                Generated by: {{ provider_used }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="result-content">
+                            <div class="transcript-text">{{ transcript }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if notes %}
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3 class="result-title">
+                                AI Meeting Notes
+                            </h3>
+                            <div class="result-actions">
+                                <!-- Regenerate Button -->
+                                <button type="button" class="regenerate-btn" onclick="toggleRegenerateForm()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                    </svg>
+                                    Try Different AI
+                                </button>
+                                
+                                <!-- Save Button -->
+                                <form method="POST" action="{{ url_for('save_notes') }}" style="display: inline;">
+                                    <input type="hidden" name="transcript" value="{{ transcript }}">
+                                    <input type="hidden" name="notes" value="{{ notes }}">
+                                    <input type="hidden" name="title" value="Meeting Notes - {{ None|moment }}">
+                                    <input type="hidden" name="provider_used" value="{{ provider_used }}">
+                                    <button type="submit" class="save-btn">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                                        </svg>
+                                        Save Notes
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Regenerate Form (Hidden by default) -->
+                        <div id="regenerate-form" class="regenerate-form" style="display: none;">
+                            <form method="POST" action="{{ url_for('regenerate_notes') }}">
+                                <input type="hidden" name="transcript" value="{{ transcript }}">
+                                
+                                <div class="regenerate-options">
+                                    <div class="regenerate-group">
+                                        <label for="regenerate_ai_provider" class="regenerate-label">Try with:</label>
+                                        <select name="ai_provider" id="regenerate_ai_provider" class="regenerate-select">
+                                            <option value="auto">Auto (Best Available)</option>
+                                            {% if ai_providers and ai_providers.openai.available %}
+                                            <option value="openai">{{ ai_providers.openai.name }}</option>
+                                            {% endif %}
+                                            {% if ai_providers and ai_providers.groq.available %}
+                                            <option value="groq">{{ ai_providers.groq.name }}</option>
+                                            {% endif %}
+                                            {% if ai_providers and ai_providers.gemini.available %}
+                                            <option value="gemini">{{ ai_providers.gemini.name }}</option>
+                                            {% endif %}
+                                        </select>
+                                    </div>
+
+                                    {% if ai_providers and ai_providers.groq.available %}
+                                    <div class="regenerate-group" id="regenerate_groq_model_section" style="display: none;">
+                                        <label for="regenerate_groq_model" class="regenerate-label">Model:</label>
+                                        <select name="groq_model" id="regenerate_groq_model" class="regenerate-select">
+                                            {% for model in ai_providers.groq.models %}
+                                            <option value="{{ model }}" {% if model == 'llama-3.3-70b-versatile' %}selected{% endif %}>
+                                                {{ model.replace('-', ' ').title() }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    {% endif %}
+
+                                    <button type="submit" class="regenerate-submit-btn">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                            <polyline points="23 4 23 10 17 10"></polyline>
+                                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                        </svg>
+                                        Regenerate
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="result-content">
+                            <pre class="transcript-text">{{ notes }}</pre>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <script>
+        // File input handling
+        const fileInput = document.getElementById('audio_file');
+        const fileLabel = document.querySelector('.file-label');
+        
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                fileLabel.innerHTML = `
+                    <span class="file-icon">✅</span>
+                    <strong>${fileName}</strong><br>
+                    <span>Ready to process</span>
+                `;
+            }
+        });
+
+        // AI Provider selection handling
+        const aiProviderSelect = document.getElementById('ai_provider');
+        const groqModelSection = document.getElementById('groq_model_section');
+        
+        if (aiProviderSelect && groqModelSection) {
+            aiProviderSelect.addEventListener('change', function() {
+                if (this.value === 'groq') {
+                    groqModelSection.style.display = 'block';
+                } else {
+                    groqModelSection.style.display = 'none';
+                }
+            });
+        }
+
+        // Regenerate form handling
+        const regenerateProviderSelect = document.getElementById('regenerate_ai_provider');
+        const regenerateGroqModelSection = document.getElementById('regenerate_groq_model_section');
+        
+        if (regenerateProviderSelect && regenerateGroqModelSection) {
+            regenerateProviderSelect.addEventListener('change', function() {
+                if (this.value === 'groq') {
+                    regenerateGroqModelSection.style.display = 'block';
+                } else {
+                    regenerateGroqModelSection.style.display = 'none';
+                }
+            });
+        }
+
+        // Toggle regenerate form
+        function toggleRegenerateForm() {
+            const form = document.getElementById('regenerate-form');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+
+        // Modal handling
+        function closeModal() {
+            const modal = document.querySelector('.modal-overlay');
+            modal.classList.remove('show');
+        }
+
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(msg => {
+                msg.style.animation = 'slideUp 0.3s ease-out forwards';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

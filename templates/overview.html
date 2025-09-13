@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TalkToText</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 20%, #2d1b4e 40%, #1a0f2e 60%, #0f1a2e 80%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            color: #e4e4e7;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0, 185, 174, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 40%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 90% 70% at 10% 80%, rgba(0, 212, 199, 0.02) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(75, 0, 130, 0.02) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: backgroundShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.95), rgba(45, 27, 78, 0.3), rgba(26, 15, 46, 0.7));
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 185, 174, 0.15);
+            padding: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.01), rgba(138, 43, 226, 0.005), transparent);
+            animation: sidebarRotate 25s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes sidebarRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0 1rem;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #379b94 0%, #2a7a75 50%, #35918a 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(0, 185, 174, 0.3);
+        }
+
+        .logo-icon::after {
+            content: "🎙️";
+            font-size: 16px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            font-size: 0.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 25%, #00f0dd 50%, #00d4c7 75%, #00b9ae 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+        }
+
+        @keyframes logoGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0 0.8rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.3rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            color: #a1a1aa;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.85rem;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(0, 185, 174, 0.1);
+            color: #00b9ae;
+        }
+
+        .nav-link:hover::before,
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .logout-btn {
+            color: #ef4444;
+        }
+
+        .logout-btn:hover,
+        .logout-btn.active {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .logout-btn:hover::before,
+        .logout-btn.active::before {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+        }
+
+        .nav-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 0.5rem;
+            overflow-y: auto;
+            max-height: 95vh;
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(39, 39, 42, 0.8);
+        }
+
+        .welcome-section h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            letter-spacing: -0.02em;
+        }
+
+        .welcome-section .emoji {
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00f0dd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .welcome-section p {
+            color: #a1a1aa;
+            font-size: 0.75rem;
+        }
+
+        /* User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 8px;
+            padding: 0.5rem;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00f0dd 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .user-info h3 {
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .user-info p {
+            color: #71717a;
+            font-size: 0.7rem;
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-card {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2), rgba(26, 15, 46, 0.4));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .dashboard-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.02), transparent);
+            animation: cardRotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes cardRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(0, 185, 174, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 185, 174, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, rgba(0, 185, 174, 0.2), rgba(0, 212, 199, 0.15));
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .card-content {
+            color: #a1a1aa;
+            line-height: 1.4;
+            font-size: 0.8rem;
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                position: fixed;
+                left: -200px;
+                top: 0;
+                height: 100vh;
+                z-index: 1000;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .main-content {
+                padding: 0.5rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                gap: 0.8rem;
+                align-items: flex-start;
+            }
+
+            .welcome-section h1 {
+                font-size: 1.4rem;
+            }
+
+            .welcome-section .emoji {
+                font-size: 1.8rem;
+            }
+
+            .welcome-section p {
+                font-size: 0.7rem;
+            }
+
+            .user-profile {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 0.8rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+
+            .dashboard-card {
+                padding: 1rem;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(39, 39, 42, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 185, 174, 0.3);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 185, 174, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <a href="#" class="logo">
+                <div class="logo-icon"></div>
+                <div class="logo-text">TalkToText Pro</div>
+            </a>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/overview" class="nav-link active">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard') }}" class="nav-link{% if request.endpoint == 'dashboard' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9,22 9,12 15,12 15,22"/>
+                        </svg>
+                        AI Assistant
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('saved_notes') }}" class="nav-link{% if request.endpoint == 'saved_notes' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        Saved Notes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('activity_history') }}" class="nav-link{% if request.endpoint == 'activity_history' %} active{% endif %}">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="m12 1 1.09 3.26L16 5l-1.91 3.26L16 10.74 12 9 8 10.74l1.91-2.48L8 5l2.91-.74L12 1z"/>
+                        </svg>
+                        Recent Activity
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link logout-btn">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                        </svg>
+                        Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="dashboard-header">
+                <div class="welcome-section">
+                    <h1>Hello, {{ name }} <span class="emoji">🎉</span></h1>
+                    <p>Welcome to your TalkToText dashboard! Ready to turn conversations into smart notes?</p>
+                </div>
+                
+                <div class="user-profile">
+                    <div class="user-avatar">{{ name[0] if name else 'U' }}</div>
+                    <div class="user-info">
+                        <h3>{{ name if name else 'User' }}</h3>
+                        <p>{{ current_user.email if current_user and current_user.email else 'user@example.com' }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Cards -->
+            <div class="cards-grid">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">🎙️</div>
+                        <h3 class="card-title">Convert your Recording</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Begin recording your meetings, interviews, or conversations. Our AI will automatically process and transcribe your audio in real-time.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">📝</div>
+                        <h3 class="card-title">Recent Notes</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Access your latest transcriptions and notes. View, edit, and organize your converted conversations with powerful search capabilities.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">🧠</div>
+                        <h3 class="card-title">AI Summaries</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Get intelligent summaries of your meetings with key points, action items, and important decisions automatically extracted.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <h3 class="card-title">Analytics</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Track your usage statistics, see your most productive times, and gain insights into your meeting patterns and note-taking habits.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">🗂️</div>
+                        <h3 class="card-title">Saved Notes</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>View and manage all your saved meeting notes in one place. Organize, categorize, and retrieve notes effortlessly.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">📤</div>
+                        <h3 class="card-title">Export as PDF or Word</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Export your transcriptions and summaries as PDF or Word documents for easy sharing and professional documentation.</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <div class="card-icon">🔒</div>
+                        <h3 class="card-title">Manage Authentication</h3>
+                    </div>
+                    <div class="card-content">
+                        <p>Update your password, enable two-factor authentication, or manage your account security settings for enhanced protection.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

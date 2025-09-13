@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Note - Meeting Notes AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 20%, #2d1b4e 40%, #1a0f2e 60%, #0f1a2e 80%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            color: #e4e4e7;
+            min-height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0.5rem;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0, 185, 174, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 40%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 90% 70% at 10% 80%, rgba(0, 212, 199, 0.02) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(75, 0, 130, 0.02) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: backgroundShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* User Profile */
+        .user-profile {
+            position: absolute;
+            top: 0.3rem;
+            right: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 6px;
+            padding: 0.4rem;
+            z-index: 1001;
+        }
+
+        .user-avatar {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00f0dd 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .user-info h3 {
+            color: #ffffff;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-bottom: 0.05rem;
+        }
+
+        .user-info p {
+            color: #71717a;
+            font-size: 0.5rem;
+        }
+
+        .logout-link {
+            color: #ef4444;
+            text-decoration: none;
+            font-size: 0.55rem;
+            padding: 0.2rem 0.3rem;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-link:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Flash Messages */
+        .flash-messages {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1002;
+            width: 90%;
+            max-width: 360px;
+        }
+
+        .flash-message {
+            padding: 0.5rem 0.8rem;
+            margin-bottom: 0.2rem;
+            border-radius: 5px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            animation: slideDown 0.3s ease-out;
+            text-align: center;
+        }
+
+        .flash-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .flash-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2), rgba(26, 15, 46, 0.4));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 10px;
+            max-width: 550px;
+            width: 95%;
+            max-height: 90vh;
+            padding: 0.8rem;
+            position: relative;
+            animation: slideUp 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 0.6rem;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        /* Buttons */
+        .send-btn, .cancel-btn, .back-btn {
+            padding: 0.3rem 0.7rem;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            transition: all 0.3s ease;
+            border: none;
+            margin: 0.2rem;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: buttonGradient 3s ease-in-out infinite;
+            color: #ffffff;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0, 185, 174, 0.3);
+            animation-play-state: paused;
+        }
+
+        .send-btn:disabled {
+            background: rgba(108, 117, 125, 0.2);
+            color: #6c757d;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        .cancel-btn {
+            background: rgba(108, 117, 125, 0.2);
+            border: 1px solid rgba(108, 117, 125, 0.3);
+            color: #6c757d;
+        }
+
+        .cancel-btn:hover {
+            background: rgba(108, 117, 125, 0.3);
+            border-color: rgba(108, 117, 125, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .back-btn {
+            background: rgba(108, 117, 125, 0.2);
+            border: 1px solid rgba(108, 117, 125, 0.3);
+            color: #6c757d;
+        }
+
+        .back-btn:hover {
+            background: rgba(108, 117, 125, 0.3);
+            border-color: rgba(108, 117, 125, 0.5);
+            transform: translateY(-1px);
+        }
+
+        @keyframes buttonGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 0.6rem;
+        }
+
+        .form-group label {
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+            display: block;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 5px;
+            color: #ffffff;
+            font-size: 0.75rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: #00b9ae;
+            box-shadow: 0 0 0 2px rgba(0, 185, 174, 0.2);
+        }
+
+        .form-group small {
+            color: #71717a;
+            font-size: 0.6rem;
+            display: block;
+            margin-top: 0.2rem;
+        }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-check-input {
+            width: 0.8rem;
+            height: 0.8rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .form-check-input:checked {
+            background: #00b9ae;
+            border-color: #00b9ae;
+        }
+
+        .form-check-label {
+            color: #a1a1aa;
+            font-size: 0.75rem;
+        }
+
+        .form-check-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-right: 0.6rem;
+        }
+
+        /* Note Preview */
+        .note-preview {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            padding: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .note-preview h6 {
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .note-preview p {
+            color: #a1a1aa;
+            font-size: 0.75rem;
+            margin: 0.2rem 0;
+        }
+
+        .note-preview p strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .note-preview details {
+            margin-bottom: 0.3rem;
+        }
+
+        .note-preview summary {
+            color: #00b9ae;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.3rem;
+            border-radius: 5px;
+            background: rgba(0, 185, 174, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .note-preview summary:hover {
+            background: rgba(0, 185, 174, 0.2);
+        }
+
+        .note-preview .content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            padding: 0.3rem;
+            margin-top: 0.3rem;
+            color: #a1a1aa;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+        }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.3rem;
+            margin-top: 0.6rem;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(39, 39, 42, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 185, 174, 0.3);
+            border-radius: 2px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 185, 174, 0.5);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 98%;
+                padding: 0.6rem;
+                max-height: 92vh;
+            }
+
+            .modal-title {
+                font-size: 1.1rem;
+            }
+
+            .user-profile {
+                top: 0.2rem;
+                right: 0.2rem;
+                padding: 0.3rem;
+            }
+
+            .user-avatar {
+                width: 18px;
+                height: 18px;
+                font-size: 0.6rem;
+            }
+
+            .user-info h3 {
+                font-size: 0.6rem;
+            }
+
+            .user-info p {
+                font-size: 0.45rem;
+            }
+
+            .logout-link {
+                font-size: 0.5rem;
+            }
+
+            .flash-messages {
+                max-width: 95%;
+            }
+
+            .flash-message {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="user-profile">
+        <div class="user-avatar">{{ name[0] }}</div>
+        <div class="user-info">
+            <h3>{{ name }}</h3>
+            <p>User</p>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="modal-content">
+        <h2 class="modal-title">Email Note: {{ note.title }}</h2>
+        <form method="POST" {% if not email_configured %}style="opacity: 0.5; pointer-events: none;"{% endif %}>
+            {% if not email_configured %}
+                <div class="flash-message flash-danger">
+                    Email service is not configured. Please contact the administrator to set up email functionality.
+                </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="recipient_email">Recipient Email Address *</label>
+                <input type="email" 
+                       id="recipient_email" 
+                       name="recipient_email" 
+                       required
+                       placeholder="recipient@example.com">
+                <small>Enter the email address to send the note to</small>
+            </div>
+
+            <div class="form-group">
+                <label for="personal_message">Personal Message (Optional)</label>
+                <textarea id="personal_message" 
+                          name="personal_message" 
+                          rows="2"
+                          placeholder="Add a personal message..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" 
+                           type="checkbox" 
+                           id="include_attachment" 
+                           name="include_attachment">
+                    <label class="form-check-label" for="include_attachment">
+                        Include note as attachment
+                    </label>
+                </div>
+                <small>If unchecked, the note content will be included in the email body</small>
+            </div>
+
+            <div class="form-group" id="attachment_format_group" style="display: none;">
+                <label>Attachment Format</label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" 
+                               type="radio" 
+                               name="attachment_format" 
+                               id="format_pdf" 
+                               value="pdf" 
+                               checked>
+                        <label class="form-check-label" for="format_pdf">PDF</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" 
+                               type="radio" 
+                               name="attachment_format" 
+                               id="format_docx" 
+                               value="docx">
+                        <label class="form-check-label" for="format_docx">Word</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note-preview">
+                <h6>Note Preview</h6>
+                <p><strong>Title:</strong> {{ note.title }}</p>
+                <p><strong>Created:</strong> {{ note.created_at | moment }}</p>
+                <p><strong>AI Provider:</strong> {{ note.ai_provider }}</p>
+                
+                {% if note.transcript %}
+                <details>
+                    <summary>View Transcript</summary>
+                    <div class="content">
+                        {{ note.transcript[:150] }}{% if note.transcript|length > 150 %}...{% endif %}
+                    </div>
+                </details>
+                {% endif %}
+                
+                {% if note.notes %}
+                <details>
+                    <summary>View Notes</summary>
+                    <div class="content">
+                        {{ note.notes[:150] }}{% if note.notes|length > 150 %}...{% endif %}
+                    </div>
+                </details>
+                {% endif %}
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{ url_for('saved_notes') }}" class="back-btn">
+                    Back to Saved Notes
+                </a>
+                <a href="{{ url_for('view_note', note_id=note._id) }}" class="cancel-btn">
+                    Cancel
+                </a>
+                <button type="submit" class="send-btn" {% if not email_configured %}disabled{% endif %}>
+                    Send Email
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Show/hide attachment format options
+        document.getElementById('include_attachment').addEventListener('change', function() {
+            const formatGroup = document.getElementById('attachment_format_group');
+            formatGroup.style.display = this.checked ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

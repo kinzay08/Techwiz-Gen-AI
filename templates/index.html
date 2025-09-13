@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalkToText Pro - AI Meeting Notes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0f2e 20%, #2d1b4e 40%, #1a0f2e 60%, #0f1a2e 80%, #0a0a0a 100%);
+            background-size: 400% 400%;
+            animation: gradientFlow 20s ease infinite;
+            color: #e4e4e7;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 70% 50% at 30% 20%, rgba(0, 185, 174, 0.05) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 40%, rgba(138, 43, 226, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse 90% 70% at 10% 80%, rgba(0, 212, 199, 0.02) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 10%, rgba(75, 0, 130, 0.02) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+            animation: backgroundShift 15s ease-in-out infinite;
+        }
+
+        @keyframes gradientFlow {
+            0%, 100% { background-position: 0% 50%; }
+            25% { background-position: 100% 0%; }
+            50% { background-position: 100% 100%; }
+            75% { background-position: 0% 100%; }
+        }
+
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 4rem;
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 185, 174, 0.15);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #379b94 0%, #2a7a75 50%, #35918a 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 185, 174, 0.3);
+        }
+
+        .logo-icon::after {
+            content: "🎙️";
+            font-size: 18px;
+            filter: brightness(0) invert(1);
+        }
+
+        .logo-text {
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 25%, #00f0dd 50%, #00d4c7 75%, #00b9ae 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+        }
+
+        @keyframes logoGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.8rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #a1a1aa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #00b9ae;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background: linear-gradient(135deg, #39827d, #388f89);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .get-app-btn {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, #30918b 0%, #1d4745 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: buttonGradient 3s ease-in-out infinite;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 185, 174, 0.3);
+        }
+
+        .get-app-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 185, 174, 0.4);
+        }
+
+        @keyframes buttonGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.9), rgba(45, 27, 78, 0.3));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #a1a1aa;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #00b9ae;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .modal-text {
+            font-size: 1rem;
+            color: #a1a1aa;
+            line-height: 1.6;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            display: flex;
+            align-items: center;
+            padding: 3rem 4rem;
+            gap: 4rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .hero-content {
+            flex: 1;
+            max-width: 550px;
+        }
+
+        .trusted-badge {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            padding: 0.6rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #a1a1aa;
+            margin-bottom: 2rem;
+            width: fit-content;
+        }
+
+        .trusted-badge::before {
+            content: "●";
+            color: #00b9ae;
+            margin-right: 0.6rem;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .hero-title {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff 0%, #00b9ae 50%, #00d4c7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: #a1a1aa;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .primary-btn {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #568683 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: buttonGradient 3s ease-in-out infinite;
+            border: none;
+            border-radius: 10px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 185, 174, 0.3);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 185, 174, 0.4);
+        }
+
+        .secondary-btn {
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 185, 174, 0.1);
+            color: #00b9ae;
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(0, 185, 174, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .stats {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .stat-item {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #00b9ae;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 0 20px rgba(0, 185, 174, 0.3);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #71717a;
+            font-weight: 500;
+        }
+
+        /* Hero Visual */
+        .hero-visual {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .mic-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .main-mic {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #00b9ae 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: logoGradient 4s ease-in-out infinite;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 5;
+            box-shadow: 0 0 40px rgba(0, 185, 174, 0.5);
+            border: 2px solid rgba(0, 185, 174, 0.3);
+        }
+
+        .main-mic::after {
+            content: "🎙️";
+            font-size: 40px;
+            filter: brightness(0) invert(1);
+        }
+
+        .sound-waves {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .wave {
+            position: absolute;
+            border: 1px solid rgba(0, 185, 174, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: wave-pulse 2.5s infinite ease-in-out;
+        }
+
+        .wave:nth-child(1) {
+            width: 130px;
+            height: 130px;
+            animation-delay: 0s;
+        }
+
+        .wave:nth-child(2) {
+            width: 180px;
+            height: 180px;
+            animation-delay: -0.8s;
+        }
+
+        .wave:nth-child(3) {
+            width: 230px;
+            height: 230px;
+            animation-delay: -1.6s;
+        }
+
+        @keyframes wave-pulse {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.3);
+            }
+        }
+
+        .floating-ui {
+            position: absolute;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.9), rgba(45, 27, 78, 0.3));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 12px;
+            padding: 0.8rem;
+            animation: float 3s infinite ease-in-out;
+            font-size: 0.8rem;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .ui-recording {
+            top: -60px;
+            left: -80px;
+            width: 140px;
+            animation-delay: -0.5s;
+        }
+
+        .ui-transcription {
+            top: -50px;
+            right: -90px;
+            width: 150px;
+            animation-delay: -1s;
+        }
+
+        .ui-notes {
+            bottom: -60px;
+            left: -70px;
+            width: 130px;
+            animation-delay: -1.5s;
+        }
+
+        .ui-ai-summary {
+            bottom: -50px;
+            right: -80px;
+            width: 140px;
+            animation-delay: -2s;
+        }
+
+        .ui-header {
+            font-size: 0.7rem;
+            color: #00b9ae;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        .ui-content {
+            font-size: 0.75rem;
+            color: #a1a1aa;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .ui-icon {
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 4rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(45, 27, 78, 0.1));
+            backdrop-filter: blur(10px);
+        }
+
+        .features-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .features-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .features-subtitle {
+            font-size: 1rem;
+            color: #a1a1aa;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 185, 174, 0.02), transparent);
+            animation: cardRotate 15s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes cardRotate {
+            100% { transform: rotate(360deg); }
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 185, 174, 0.3);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #00b9ae, #00d4c7);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-description {
+            font-size: 0.9rem;
+            color: #a1a1aa;
+            line-height: 1.5;
+        }
+
+        /* Pricing Section */
+        .pricing-section {
+            padding: 4rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(45, 27, 78, 0.1));
+            backdrop-filter: blur(10px);
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-subtitle {
+            font-size: 1rem;
+            color: #a1a1aa;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 185, 174, 0.3);
+        }
+
+        .pricing-card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card-price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #00b9ae;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-card-description {
+            font-size: 0.9rem;
+            color: #a1a1aa;
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-card-btn {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #568683 0%, #00d4c7 50%, #00b9ae 100%);
+            background-size: 200% 200%;
+            animation: buttonGradient 3s ease-in-out infinite;
+            border: none;
+            border-radius: 10px;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 185, 174, 0.3);
+        }
+
+        .pricing-card-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 185, 174, 0.4);
+        }
+
+        /* Testimonials Section */
+        .testimonials-section {
+            padding: 4rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.6), rgba(45, 27, 78, 0.1));
+            backdrop-filter: blur(10px);
+        }
+
+        .testimonials-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .testimonials-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .testimonials-subtitle {
+            font-size: 1rem;
+            color: #a1a1aa;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 185, 174, 0.15);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 185, 174, 0.3);
+        }
+
+        .testimonial-text {
+            font-size: 0.9rem;
+            color: #a1a1aa;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .testimonial-author {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .testimonial-role {
+            font-size: 0.8rem;
+            color: #71717a;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 2rem 4rem;
+            background: linear-gradient(145deg, rgba(24, 24, 27, 0.8), rgba(45, 27, 78, 0.2));
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(0, 185, 174, 0.15);
+            text-align: center;
+            color: #a1a1aa;
+            font-size: 0.9rem;
+        }
+
+        .footer-text {
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-section {
+                flex-direction: column;
+                text-align: center;
+                padding: 2rem;
+                gap: 2rem;
+            }
+
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .stats {
+                justify-content: center;
+                gap: 2rem;
+            }
+
+            .floating-ui {
+                display: none;
+            }
+
+            .features-section, .pricing-section, .testimonials-section {
+                padding: 2rem;
+            }
+
+            .footer {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="#" class="logo">
+            <div class="logo-icon"></div>
+            <div class="logo-text">TalkToText Pro</div>
+        </a>
+        <nav class="nav">
+            <ul class="nav-links">
+                <li><a href="#" onclick="openModal()">About Us</a></li>
+            </ul>
+            <button class="get-app-btn"><a href="/login" style="text-decoration: none; color: rgb(232, 219, 219);">Login</a></button>
+        </nav>
+    </header>
+
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2 class="modal-title">About TalkToText Pro</h2>
+            <p class="modal-text">
+                TalkToText Pro is an innovative AI-powered platform designed to revolutionize how teams manage meetings. Founded by a team of tech enthusiasts and productivity experts, our mission is to empower professionals with tools that make meetings more efficient and actionable. We combine cutting-edge speech recognition, AI analytics, and seamless integrations to help you focus on what matters most—collaboration and results. Join millions of users worldwide who trust TalkToText Pro to transform their meetings into meaningful outcomes.
+            </p>
+        </div>
+    </div>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="trusted-badge">Trusted by 1M+ professionals worldwide</div>
+            
+            <h1 class="hero-title">Your AI meeting assistant awaits</h1>
+            
+            <p class="hero-subtitle">Transform meetings into actionable insights with your AI-powered meeting summarizer and notes maker. Available on All Platforms.</p>
+            
+            <!-- <div class="cta-buttons">
+                <button class="primary-btn">Get the app</button>
+                <button class="secondary-btn">Watch demo</button>
+            </div>
+             -->
+            <!-- <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Meetings recorded daily</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">5M+</div>
+                    <div class="stat-label">Downloads & counting</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4.8</div>
+                    <div class="stat-label">by thousands users</div>
+                </div>
+            </div> -->
+        </div>
+        
+        <div class="hero-visual">
+            <div class="mic-container">
+                <div class="sound-waves">
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                </div>n 
+                
+                <div class="main-mic"></div>
+                
+                <div class="floating-ui ui-recording">
+                    <div class="ui-header">Transform Recording</div>
+                    <div class="ui-content">
+                        <div class="ui-icon">🔴</div>
+                        Recording meeting...
+                    </div>
+                </div>
+                
+                <div class="floating-ui ui-transcription">
+                    <div class="ui-header">Real-time Transcription</div>
+                    <div class="ui-content">
+                        <div class="ui-icon">📝</div>
+                        Converting speech to text
+                    </div>
+                </div>
+                
+                <div class="floating-ui ui-notes">
+                    <div class="ui-header">Smart Notes</div>
+                    <div class="ui-content">
+                        <div class="ui-icon">🧠</div>
+                        Generating insights
+                    </div>
+                </div>
+                
+                <div class="floating-ui ui-ai-summary">
+                    <div class="ui-header">AI Summary</div>
+                    <div class="ui-content">
+                        <div class="ui-icon">⚡</div>
+                        Creating summary
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-section" id="features">
+        <div class="features-header">
+            <h2 class="features-title">Powerful Features for Modern Teams</h2>
+            <p class="features-subtitle">Everything you need to capture, transcribe, and analyze your meetings with AI-powered precision.</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎙️</div>
+                <h3 class="feature-title">Transform Recording</h3>
+                <p class="feature-description">Crystal clear audio recording with noise cancellation and multiple microphone support for perfect capture.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3 class="feature-title">Real-time Transcription</h3>
+                <p class="feature-description">Live speech-to-text conversion with 99% accuracy across 40+ languages and dialects.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3 class="feature-title">AI-Powered Insights</h3>
+                <p class="feature-description">Automatic extraction of key points, action items, and decisions from your meeting conversations.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Smart Analytics</h3>
+                <p class="feature-description">Track speaking time, participation rates, and meeting effectiveness with detailed analytics.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">Easy Integration</h3>
+                <p class="feature-description">Seamlessly integrate with Slack, Teams, Zoom, and other productivity tools you already use.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3 class="feature-title">Enterprise Security</h3>
+                <p class="feature-description">Bank-level encryption, GDPR compliance, and secure cloud storage for your sensitive meetings.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="testimonials-section">
+        <div class="testimonials-header">
+            <h2 class="testimonials-title">What Our Users Say</h2>
+            <p class="testimonials-subtitle">Hear from professionals who transformed their meetings with TalkToText Pro.</p>
+        </div>
+        
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <p class="testimonial-text">"TalkToText Pro has saved us countless hours by automatically summarizing our meetings. It's a game-changer!"</p>
+                <div class="testimonial-author">Sarah Johnson</div>
+                <div class="testimonial-role">Project Manager</div>
+            </div>
+            
+            <div class="testimonial-card">
+                <p class="testimonial-text">"The real-time transcription is incredibly accurate, even with multiple speakers. Highly recommend!"</p>
+                <div class="testimonial-author">Michael Chen</div>
+                <div class="testimonial-role">Software Engineer</div>
+            </div>
+            
+            <div class="testimonial-card">
+                <p class="testimonial-text">"The analytics feature helped us improve our meeting efficiency. It's like having a coach for our team!"</p>
+                <div class="testimonial-author">Emily Davis</div>
+                <div class="testimonial-role">Team Lead</div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p class="footer-text">© 2025 TalkToText Pro. All rights reserved.</p>
+        <p class="footer-text">Transforming meetings with AI-powered efficiency.</p>
+    </footer>
+
+    <script>
+        function openModal() {
+            document.getElementById('aboutModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('aboutModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
